@@ -2,7 +2,7 @@
 
 # Python imports
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qsl
 from urllib.parse import urljoin
 
 # Third party imports
@@ -15,7 +15,9 @@ from corsheaders.defaults import default_headers
 
 # Module imports
 from plane.utils.url import is_valid_url
+from dotenv import load_dotenv
 
+load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -23,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = os.environ.get("SECRET_KEY", get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = int(os.environ.get("DEBUG", "0"))
+DEBUG = int(os.environ.get("DEBUG"))
 
 # Allowed Hosts
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
@@ -126,19 +128,34 @@ SITE_ID = 1
 # User Model
 AUTH_USER_MODEL = "db.User"
 
+# Replace the DATABASES section of your settings.py with this
+tmpPostgresDevelopment = urlparse(os.getenv("DATABASE_URL_DEVELOPMENT"))
+tmpPostgresProduction = urlparse(os.getenv("DATABASE_URL_PRODUCTION"))
+
 # Database
-if bool(os.environ.get("DATABASE_URL")):
+if DEBUG==1: #verdadeiro, desenvolvimento
     # Parse database configuration from $DATABASE_URL
-    DATABASES = {"default": dj_database_url.config()}
-else:
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("POSTGRES_DB"),
-            "USER": os.environ.get("POSTGRES_USER"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-            "HOST": os.environ.get("POSTGRES_HOST"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': tmpPostgresDevelopment.path.replace('/', ''),
+            'USER': tmpPostgresDevelopment.username,
+            'PASSWORD': tmpPostgresDevelopment.password,
+            'HOST': tmpPostgresDevelopment.hostname,
+            'PORT': 5432,
+            'OPTIONS': dict(parse_qsl(tmpPostgresDevelopment.query)),
+        }
+    }
+else: #false, producao, debug == False
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': tmpPostgresProduction.path.replace('/', ''),
+            'USER': tmpPostgresProduction.username,
+            'PASSWORD': tmpPostgresProduction.password,
+            'HOST': tmpPostgresProduction.hostname,
+            'PORT': 5432,
+            'OPTIONS': dict(parse_qsl(tmpPostgresProduction.query)),
         }
     }
 
@@ -164,7 +181,7 @@ if os.environ.get("ENABLE_READ_REPLICA", "0") == "1":
 
 
 # Redis Config
-REDIS_URL = os.environ.get("REDIS_URL")
+REDIS_URL = "redis://default:zNQDYpHNI8Sz4Xk4dunDf2VCLJwsAp2n@redis-17877.c8.us-east-1-4.ec2.cloud.redislabs.com:17877"
 REDIS_SSL = REDIS_URL and "rediss" in REDIS_URL
 
 if REDIS_SSL:
