@@ -129,33 +129,30 @@ SITE_ID = 1
 AUTH_USER_MODEL = "db.User"
 
 # Replace the DATABASES section of your settings.py with this
-tmpPostgresDevelopment = urlparse(os.getenv("DATABASE_URL_DEVELOPMENT"))
-tmpPostgresProduction = urlparse(os.getenv("DATABASE_URL_PRODUCTION"))
+DATABASE_URL = urlparse(os.getenv("DATABASE_URL"))
+# tmpPostgresProduction = urlparse(os.getenv("DATABASE_URL_PRODUCTION"))
 
 # Database
 if DEBUG==1: #verdadeiro, desenvolvimento
     # Parse database configuration from $DATABASE_URL
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': tmpPostgresDevelopment.path.replace('/', ''),
-            'USER': tmpPostgresDevelopment.username,
-            'PASSWORD': tmpPostgresDevelopment.password,
-            'HOST': tmpPostgresDevelopment.hostname,
-            'PORT': 5432,
-            'OPTIONS': dict(parse_qsl(tmpPostgresDevelopment.query)),
-        }
+        'default': dj_database_url.parse(DATABASE_URL)
     }
 else: #false, producao, debug == False
+    # Opción 1: Usando variables de entorno separadas (la más clara y común)
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': tmpPostgresProduction.path.replace('/', ''),
-            'USER': tmpPostgresProduction.username,
-            'PASSWORD': tmpPostgresProduction.password,
-            'HOST': tmpPostgresProduction.hostname,
-            'PORT': 5432,
-            'OPTIONS': dict(parse_qsl(tmpPostgresProduction.query)),
+            'ENGINE': 'django.db.backends.postgresql',  # o 'postgresql_psycopg2'
+            'NAME': os.getenv('POSTGRES_DB', 'nombre_de_tu_db'),
+            'USER': os.getenv('POSTGRES_USER', 'tu_usuario'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'tu_password'),
+            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),  # o 'db' en Docker
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+            # Opcional: parámetros extras
+            'OPTIONS': {
+                # 'sslmode': 'require',   # úsalo si tu hosting lo exige (Render, Railway, etc.)
+            },
+            'CONN_MAX_AGE': 60,  # opcional, mejora rendimiento en producción
         }
     }
 
